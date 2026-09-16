@@ -1,0 +1,1563 @@
+/* Paleta de colores extraída de tu PDF (Pág. 3) — lectura normal */
+:root {
+    --color-eucalyptus: #98aa9d;
+    --color-mist: #b3c9d6;
+    --color-plaster: #f2efe2;
+    --color-soot: #2d3536;
+    --color-moss: #607c70;
+    --white-frosted: rgba(255, 255, 255, 0.38);
+
+    /* ============================================
+       DOS IDENTIDADES VISUALES DIFERENCIADAS
+       ============================================ */
+
+    /* "El Sistema" — intro RPG, limpio/futurista/sci-fi (Genshin-like) */
+    --sistema-cobalto: #3f6fd1;
+    --sistema-cielo: #8fc4ff;
+    --sistema-blanco: #eef6ff;
+    --sistema-texto: #dbe9ff;
+    --sistema-fondo: #0a0f1c;
+    --sistema-fondo-caja: rgba(18, 28, 48, 0.5);
+    --sistema-borde: rgba(143, 196, 255, 0.35);
+    --sistema-glow: rgba(90, 160, 255, 0.35);
+    --sistema-fuente: 'Hanken Grotesk', sans-serif;
+
+    /* "Capítulos Secretos" — hacker/underground/brutalista, terminal matrix */
+    --secreto-verde: #7cffb2;
+    --secreto-verde-claro: #baffd6;
+    --secreto-texto: #d7ffe8;
+    --secreto-fondo: #0b0f0d;
+    --secreto-fondo-caja: rgba(9, 20, 16, 0.85);
+    --secreto-borde: rgba(124, 255, 178, 0.3);
+    --secreto-glow: rgba(0, 255, 140, 0.15);
+    --secreto-fuente: 'VT323', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--color-plaster);
+    color: var(--color-soot);
+    font-family: 'Raleway', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+}
+
+/* Fondo dinámico por capítulo/momento (Pág. 2): dos capas que se funden entre sí
+   cuando cambia el color activo, en vez de saltar de golpe. El color de las
+   manchas lo define el marcador [color:...] en el manuscrito; ver app.js. */
+.bg-layer {
+    position: fixed;
+    inset: -6%; /* deja margen para que la deriva nunca revele un borde recto */
+    z-index: -1;
+    background-color: var(--color-plaster);
+    opacity: 0;
+    transition: opacity 1.6s ease;
+    pointer-events: none;
+    will-change: transform;
+    animation: bg-deriva 55s ease-in-out infinite alternate;
+}
+
+.bg-layer.activa {
+    opacity: 1;
+}
+
+/* Movimiento muy lento y sutil (translate/scale, acelerado por GPU vía transform)
+   para que el fondo no se sienta estático sin distraer de la lectura. */
+@keyframes bg-deriva {
+    0%   { transform: translate3d(0, 0, 0) scale(1); }
+    50%  { transform: translate3d(-1.5%, 1%, 0) scale(1.035); }
+    100% { transform: translate3d(1.5%, -1%, 0) scale(1.02); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bg-layer {
+        animation: none;
+    }
+}
+
+/* Contenedor del Lector Estilo Zen — Frosted Glass reforzado.
+   Una sola columna, pero más amplio que la versión "documento" original
+   para que quepa algo más de texto por línea sin perder comodidad de lectura. */
+.reader-container {
+    max-width: 860px;
+    width: 92%;
+    margin: 40px auto;
+    padding: 60px 70px;
+    background: var(--white-frosted);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 28px;
+    box-shadow:
+        0 20px 60px rgba(45, 53, 54, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Tipografía de la Novela */
+.novel-header {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.chapter-number {
+    font-size: 0.9rem;
+    letter-spacing: 4px;
+    color: var(--color-eucalyptus);
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.chapter-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.5rem;
+    font-weight: 400;
+    margin-top: 8px;
+    color: var(--color-soot);
+}
+
+/* ============================================
+   MODO LECTURA — una sola columna, flujo normal del navegador.
+   Sin columnas CSS ni recortes: .book-flow simplemente fluye texto como
+   cualquier página web. La paginación (bloques de párrafos) la controla
+   app.js reemplazando el contenido en cada "Continuar"/"Atrás".
+   ============================================ */
+.book-viewport {
+    width: 100%;
+}
+
+.book-flow p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.18rem;
+    line-height: 1.5;
+    margin: 0 0 1.1em 0;
+    padding-right: 4px; /* colchón para que ninguna letra toque el borde del contenedor */
+    text-align: justify;
+    hyphens: auto;
+    overflow-wrap: anywhere; /* evita que una palabra/token largo desborde y se recorte */
+    word-break: normal;
+    color: var(--color-soot);
+    box-sizing: border-box;
+}
+
+.book-flow strong {
+    font-weight: 600; /* coincide con el peso 600 cargado de Cormorant Garamond */
+}
+
+.book-flow em {
+    font-style: italic;
+}
+
+.page-indicator {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    color: var(--color-moss);
+    min-width: 60px;
+    text-align: center;
+}
+
+/* Estilo para los Easter Eggs / Palabras Clave Interactivas */
+.interactive-keyword {
+    color: var(--color-eucalyptus);
+    border-bottom: 1px dashed var(--color-eucalyptus);
+    cursor: pointer;
+    transition: color 0.3s ease;
+    font-weight: 600;
+}
+
+.interactive-keyword:hover {
+    color: var(--color-soot);
+    background-color: rgba(139, 164, 144, 0.15);
+}
+
+/* Marcador de Música Inline (semicírculo -> círculo, Pág. 5) */
+.audio-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    width: fit-content;
+    margin: 34px auto;
+    padding: 6px 18px 6px 6px;
+    border-radius: 40px;
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s ease;
+}
+
+.audio-marker:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.audio-marker-btn {
+    flex-shrink: 0;
+    background: var(--color-eucalyptus);
+    border: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50% 6px 50% 50%; /* insinúa el semicírculo del PDF en reposo */
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(45, 53, 54, 0.15);
+}
+
+.audio-marker:hover .audio-marker-btn {
+    border-radius: 50%; /* al hover, se completa en círculo */
+    background: var(--color-soot);
+    transform: scale(1.15);
+}
+
+.audio-marker-btn .music-wave {
+    width: 6px;
+    height: 6px;
+    background: var(--color-plaster);
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.audio-marker:hover .audio-marker-btn .music-wave {
+    transform: scale(1.4);
+}
+
+.audio-marker-label {
+    font-family: 'Raleway', sans-serif;
+    font-style: italic;
+    font-size: 0.82rem;
+    letter-spacing: 0.3px;
+    color: var(--color-moss);
+}
+
+/* Estado reproduciendo */
+.audio-marker.playing {
+    background: rgba(152, 170, 157, 0.28);
+}
+
+.audio-marker.playing .audio-marker-btn {
+    border-radius: 50%;
+    background: var(--color-soot);
+}
+
+.audio-marker.playing .audio-marker-btn .music-wave {
+    animation: pulso-musica 1.3s ease-in-out infinite;
+}
+
+/* Estado pausado: sigue "activo" pero sin el pulso */
+.audio-marker.paused {
+    background: rgba(152, 170, 157, 0.2);
+}
+
+.audio-marker.paused .audio-marker-btn {
+    border-radius: 50%;
+    background: var(--color-moss);
+}
+
+/* Estilos de Botones de Navegación */
+.reader-footer {
+    margin-top: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.nav-btn {
+    background: transparent;
+    border: 1px solid var(--color-moss);
+    padding: 12px 35px;
+    border-radius: 30px;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    color: var(--color-soot);
+    transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+    background: var(--color-soot);
+    color: var(--color-plaster);
+}
+
+.nav-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+    pointer-events: none;
+}
+
+.nav-btn-ghost {
+    border-color: rgba(96, 124, 112, 0.4);
+    color: var(--color-moss);
+    padding: 12px 28px;
+}
+
+.nav-btn-ghost:hover {
+    background: rgba(96, 124, 112, 0.15);
+    color: var(--color-soot);
+}
+
+/* Menú de Capítulos — discreto, esquina superior */
+.chapter-menu {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 150;
+}
+
+.chapter-menu-toggle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.32);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    color: var(--color-soot);
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(45, 53, 54, 0.12);
+    transition: all 0.3s ease;
+}
+
+.chapter-menu-toggle:hover,
+.chapter-menu-toggle[aria-expanded="true"] {
+    background: var(--color-soot);
+    color: var(--color-plaster);
+    transform: scale(1.05);
+}
+
+.chapter-menu-panel {
+    position: absolute;
+    top: 54px;
+    right: 0;
+    min-width: 220px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 16px 40px rgba(45, 53, 54, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.chapter-menu-item {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Raleway', sans-serif;
+    color: var(--color-soot);
+    transition: background 0.2s ease;
+}
+
+.chapter-menu-item:hover {
+    background: rgba(152, 170, 157, 0.25);
+}
+
+.chapter-menu-item.activo {
+    background: rgba(152, 170, 157, 0.4);
+    font-weight: 500;
+}
+
+.chapter-menu-item-num {
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: var(--color-eucalyptus);
+    flex-shrink: 0;
+}
+
+.chapter-menu-item-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.05rem;
+}
+
+/* Mini-reproductor persistente — aparece mientras suena un marcador de música */
+.mini-player {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 150;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px 10px 16px;
+    max-width: 280px;
+    border-radius: 40px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 12px 30px rgba(45, 53, 54, 0.15);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.mini-player.hidden {
+    display: flex !important; /* sobreescribe .hidden para animar la salida */
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+}
+
+.mini-player-icon {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-eucalyptus);
+}
+
+.mini-player.playing .mini-player-icon {
+    animation: pulso-musica 1.3s ease-in-out infinite;
+}
+
+.mini-player-label {
+    font-family: 'Raleway', sans-serif;
+    font-style: italic;
+    font-size: 0.82rem;
+    color: var(--color-soot);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 130px;
+}
+
+.mini-player-btn {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(45, 53, 54, 0.08);
+    color: var(--color-soot);
+    font-size: 0.7rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.mini-player-btn:hover {
+    background: var(--color-soot);
+    color: var(--color-plaster);
+}
+
+.mini-player-stop:hover {
+    background: #b3554f;
+    color: #fff;
+}
+
+/* Modales Ocultos para Easter Eggs (Scrapbook Clean - Pág. 5 y 6) */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(32, 53, 56, 0.4);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    transition: opacity 0.3s ease;
+}
+
+.scrapbook-card {
+    background: #ffffff;
+    padding: 40px;
+    max-width: 500px;
+    width: 85%;
+    border-radius: 4px; /* Estilo libreta/tarjeta de archivo tradicional */
+    box-shadow: 5px 5px 0px var(--color-soot); /* Sombra dura mix-media */
+    border: 1px solid var(--color-soot);
+    position: relative;
+    background-image: radial-gradient(var(--color-mist) 1px, transparent 0); /* Textura sutil de papel */
+    background-size: 24px 24px;
+}
+
+.hidden {
+    display: none !important;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ============================================
+   PUERTA SECRETA — acertijo + contraseña antes del capítulo secreto.
+   Usa la piel terminal (VT323 + Hanken Grotesk) sin importar el tema
+   actual de la página: es un adelanto de lo que hay del otro lado.
+   ============================================ */
+.gate-card {
+    max-width: 440px;
+    background: var(--secreto-fondo-caja);
+    background-image: none;
+    border: 1px solid var(--secreto-borde);
+    border-radius: 2px; /* brutalista: sin curvas suaves */
+    box-shadow: 0 0 60px var(--secreto-glow), 5px 5px 0px rgba(0, 0, 0, 0.4);
+    color: var(--secreto-texto);
+    transition: filter 0.4s ease;
+}
+
+.gate-card .close-btn {
+    color: var(--secreto-verde-claro);
+}
+
+.gate-riddle {
+    font-family: var(--secreto-fuente);
+    font-size: 1.35rem;
+    letter-spacing: 0.5px;
+    color: var(--secreto-verde-claro);
+    line-height: 1.5;
+    margin-bottom: 22px;
+    padding-right: 20px;
+}
+
+.gate-form {
+    display: flex;
+    gap: 10px;
+}
+
+.gate-input {
+    flex: 1;
+    min-width: 0;
+    background: rgba(124, 255, 178, 0.08);
+    border: 1px solid var(--secreto-borde);
+    border-radius: 2px;
+    padding: 10px 14px;
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 0.95rem;
+    color: var(--secreto-texto);
+}
+
+.gate-input:focus {
+    outline: none;
+    border-color: var(--secreto-verde);
+}
+
+.gate-input::placeholder {
+    color: rgba(215, 255, 232, 0.4);
+}
+
+.gate-submit {
+    font-family: var(--secreto-fuente);
+    font-size: 1.05rem;
+    border-radius: 2px;
+    border-color: var(--secreto-verde);
+    color: var(--secreto-verde-claro);
+    padding: 10px 24px;
+    white-space: nowrap;
+}
+
+.gate-submit:hover {
+    background: var(--secreto-verde);
+    color: var(--secreto-fondo);
+}
+
+.gate-feedback {
+    margin-top: 16px;
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.3px;
+}
+
+.gate-feedback.error {
+    color: #e08a7d;
+}
+
+.gate-feedback.success {
+    color: var(--secreto-verde);
+}
+
+/* Clave incorrecta: la "pantalla" se apaga como un monitor CRT y vuelve */
+@keyframes gate-apagon {
+    0% { filter: brightness(1); transform: scaleY(1); }
+    30% { filter: brightness(2.2); transform: scaleY(1); }
+    55% { filter: brightness(0.1); transform: scaleY(0.02); }
+    78% { filter: brightness(0.1); transform: scaleY(0.02); }
+    100% { filter: brightness(1); transform: scaleY(1); }
+}
+
+.gate-card.apagon {
+    animation: gate-apagon 0.7s ease-in-out;
+}
+
+/* Clave correcta: pulso de acceso concedido antes de revelar el capítulo */
+@keyframes gate-exito {
+    0% { box-shadow: 0 0 60px rgba(0, 255, 140, 0.15), 5px 5px 0px rgba(0, 0, 0, 0.4); transform: scale(1); opacity: 1; }
+    45% { box-shadow: 0 0 110px rgba(124, 255, 178, 0.65), 5px 5px 0px rgba(0, 0, 0, 0.4); transform: scale(1.04); opacity: 1; }
+    100% { box-shadow: 0 0 140px rgba(124, 255, 178, 0.9), 5px 5px 0px rgba(0, 0, 0, 0.4); transform: scale(1.1); opacity: 0; }
+}
+
+.gate-card.exito {
+    animation: gate-exito 0.85s ease-in-out forwards;
+}
+
+/* ============================================
+   RESALTADO Y COMENTARIOS
+   ============================================ */
+
+/* Texto resaltado dentro del libro */
+.book-flow mark {
+    background: rgba(217, 154, 108, 0.28);
+    border-bottom: 1px solid rgba(217, 154, 108, 0.6);
+    color: inherit;
+    cursor: pointer;
+    padding: 0 1px;
+    border-radius: 2px;
+    transition: background 0.2s ease;
+}
+
+.book-flow mark:hover {
+    background: rgba(217, 154, 108, 0.45);
+}
+
+body.modo-secreto .book-flow mark {
+    background: rgba(124, 255, 178, 0.2);
+    border-bottom-color: rgba(124, 255, 178, 0.5);
+}
+
+/* Botón flotante "Comentar" que sigue a la selección de texto */
+.highlight-toolbar {
+    position: fixed;
+    z-index: 250;
+    transform: translate(-50%, -100%);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.highlight-toolbar.hidden {
+    display: flex !important;
+    opacity: 0;
+    transform: translate(-50%, -90%);
+    pointer-events: none;
+}
+
+.highlight-toolbar-btn {
+    background: rgba(45, 53, 54, 0.92);
+    color: var(--color-plaster);
+    border: none;
+    padding: 9px 18px;
+    border-radius: 30px;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(45, 53, 54, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    white-space: nowrap;
+}
+
+.highlight-toolbar-btn:hover {
+    background: var(--color-soot);
+}
+
+/* Botón persistente de comentarios — esquina inferior izquierda, discreto */
+.comments-toggle {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 150;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.32);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    color: var(--color-soot);
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(45, 53, 54, 0.12);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.comments-toggle:hover,
+.comments-toggle[aria-expanded="true"] {
+    background: var(--color-soot);
+    color: var(--color-plaster);
+    transform: scale(1.05);
+}
+
+.comments-toggle-icon {
+    font-size: 1.1rem;
+}
+
+.comments-toggle-count {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 9px;
+    background: var(--color-eucalyptus);
+    color: #fff;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Formulario para redactar el comentario tras resaltar */
+.comment-form-card {
+    max-width: 440px;
+}
+
+.comment-form-excerpt {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--color-moss);
+    border-left: 3px solid var(--color-eucalyptus);
+    padding-left: 14px;
+    margin-bottom: 18px;
+    padding-right: 20px;
+}
+
+.comment-form-textarea {
+    width: 100%;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.95rem;
+    color: var(--color-soot);
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(45, 53, 54, 0.15);
+    border-radius: 10px;
+    padding: 12px 14px;
+    resize: vertical;
+    min-height: 90px;
+}
+
+.comment-form-textarea:focus {
+    outline: none;
+    border-color: var(--color-eucalyptus);
+}
+
+.comment-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+/* Panel de comentarios guardados */
+.comments-panel {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(45, 53, 54, 0.2);
+    width: 90%;
+    max-width: 460px;
+    max-height: 75vh;
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    transform: scale(0.95);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+}
+
+.overlay:not(.hidden) .comments-panel {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.comments-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.comments-panel-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--color-soot);
+}
+
+.comments-panel-header .close-btn {
+    position: static;
+}
+
+.comments-panel-hint {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.78rem;
+    color: var(--color-moss);
+    margin-bottom: 16px;
+}
+
+.comments-panel-list {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.comments-panel-empty {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--color-moss);
+    text-align: center;
+    padding: 30px 0;
+}
+
+.comment-card {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(45, 53, 54, 0.1);
+    border-radius: 14px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.comment-card:hover {
+    background: rgba(255, 255, 255, 0.75);
+}
+
+.comment-card-chapter {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--color-eucalyptus);
+    margin-bottom: 6px;
+}
+
+.comment-card-excerpt {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 0.98rem;
+    color: var(--color-moss);
+    border-left: 2px solid var(--color-eucalyptus);
+    padding-left: 10px;
+    margin-bottom: 8px;
+}
+
+.comment-card-text {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.88rem;
+    color: var(--color-soot);
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.comment-card-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.comment-card-delete {
+    background: none;
+    border: none;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+    color: #b3554f;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+.comment-card-delete:hover {
+    text-decoration: underline;
+}
+
+body.modo-secreto .comments-toggle {
+    background: rgba(9, 20, 16, 0.5);
+    border-color: var(--secreto-borde);
+    border-radius: 2px;
+    color: var(--secreto-verde-claro);
+}
+
+body.modo-secreto .comments-toggle:hover,
+body.modo-secreto .comments-toggle[aria-expanded="true"] {
+    background: var(--secreto-verde);
+    color: var(--secreto-fondo);
+}
+
+body.modo-secreto .comments-panel {
+    background: var(--secreto-fondo-caja);
+    border-color: var(--secreto-borde);
+    border-radius: 2px;
+}
+
+body.modo-secreto .comments-panel-header h2,
+body.modo-secreto .comment-card-text {
+    color: var(--secreto-texto);
+}
+
+body.modo-secreto .comment-card {
+    background: rgba(124, 255, 178, 0.08);
+    border-color: rgba(124, 255, 178, 0.2);
+    border-radius: 2px;
+}
+
+/* Responsive: en pantallas angostas, una sola página visible y menos padding */
+@media (max-width: 860px) {
+    .reader-container {
+        padding: 40px 28px;
+    }
+
+    .book-flow p {
+        font-size: 1.05rem;
+    }
+
+    .comments-toggle,
+    .chapter-menu-toggle {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: var(--color-soot);
+}
+
+/* Contenido dentro de la tarjeta scrapbook (Pág. 5) */
+.secret-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+    padding-right: 20px;
+}
+
+.secret-image {
+    display: block;
+    width: 100%;
+    border-radius: 2px;
+    box-shadow: 4px 4px 0px rgba(32, 53, 56, 0.15);
+    margin-bottom: 12px;
+}
+
+.secret-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    line-height: 1.6;
+}
+
+.secret-caption {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.8rem;
+    color: var(--color-moss);
+    margin-top: 10px;
+    letter-spacing: 0.5px;
+}
+
+@keyframes pulso-musica {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.6); }
+}
+
+/* ============================================
+   CAPÍTULO SECRETO — ruptura de estética (Pág. 6)
+   Terminal / dossier "classified", VT323 + Hanken Grotesk
+   ============================================ */
+body.modo-secreto {
+    background-color: var(--secreto-fondo);
+    background-image: radial-gradient(circle at 50% 0%, #10201a 0%, var(--secreto-fondo) 70%);
+}
+
+/* Brutalista: esquinas afiladas, nada de curvas suaves tipo "zen" */
+body.modo-secreto .reader-container {
+    background: var(--secreto-fondo-caja);
+    border: 1px solid var(--secreto-borde);
+    border-radius: 2px;
+    box-shadow: 0 0 50px var(--secreto-glow);
+}
+
+body.modo-secreto .chapter-number {
+    font-family: var(--secreto-fuente);
+    font-size: 1.2rem;
+    letter-spacing: 6px;
+    color: var(--secreto-verde);
+}
+
+body.modo-secreto .chapter-title {
+    font-family: var(--secreto-fuente);
+    font-weight: 400;
+    font-size: 3rem;
+    letter-spacing: 1px;
+    color: var(--secreto-verde-claro);
+}
+
+body.modo-secreto .book-flow p {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 1.05rem;
+    line-height: 1.75;
+    text-align: left;
+    color: var(--secreto-texto);
+}
+
+body.modo-secreto .page-indicator {
+    font-family: var(--secreto-fuente);
+    color: var(--secreto-verde);
+}
+
+body.modo-secreto .interactive-keyword {
+    color: var(--secreto-verde-claro);
+    border-bottom-color: var(--secreto-verde);
+}
+
+body.modo-secreto .interactive-keyword:hover {
+    color: var(--secreto-fondo);
+    background-color: var(--secreto-verde);
+}
+
+body.modo-secreto .nav-btn {
+    font-family: var(--secreto-fuente);
+    font-size: 1.1rem;
+    letter-spacing: 3px;
+    border-radius: 2px;
+    border-color: var(--secreto-verde);
+    color: var(--secreto-verde-claro);
+}
+
+body.modo-secreto .nav-btn:hover {
+    background: var(--secreto-verde);
+    color: var(--secreto-fondo);
+}
+
+body.modo-secreto .nav-btn-ghost {
+    border-color: var(--secreto-borde);
+    color: var(--secreto-verde);
+}
+
+body.modo-secreto .nav-btn-ghost:hover {
+    background: rgba(124, 255, 178, 0.15);
+    color: var(--secreto-verde-claro);
+}
+
+body.modo-secreto .chapter-menu-toggle {
+    background: rgba(9, 20, 16, 0.5);
+    border-color: var(--secreto-borde);
+    border-radius: 2px;
+    color: var(--secreto-verde-claro);
+}
+
+body.modo-secreto .chapter-menu-toggle:hover,
+body.modo-secreto .chapter-menu-toggle[aria-expanded="true"] {
+    background: var(--secreto-verde);
+    color: var(--secreto-fondo);
+}
+
+body.modo-secreto .chapter-menu-panel {
+    background: var(--secreto-fondo-caja);
+    border-color: var(--secreto-borde);
+    border-radius: 2px;
+}
+
+body.modo-secreto .chapter-menu-item {
+    color: var(--secreto-texto);
+    border-radius: 0;
+}
+
+body.modo-secreto .chapter-menu-item:hover,
+body.modo-secreto .chapter-menu-item.activo {
+    background: rgba(124, 255, 178, 0.18);
+}
+
+body.modo-secreto .chapter-menu-item-num {
+    color: var(--secreto-verde);
+}
+
+body.modo-secreto .mini-player {
+    background: rgba(9, 20, 16, 0.6);
+    border-color: var(--secreto-borde);
+    border-radius: 4px;
+}
+
+body.modo-secreto .mini-player-label {
+    color: var(--secreto-texto);
+}
+
+body.modo-secreto .mini-player-icon {
+    background: var(--secreto-verde);
+}
+
+body.modo-secreto .mini-player-btn {
+    background: rgba(124, 255, 178, 0.12);
+    color: var(--secreto-verde-claro);
+    border-radius: 2px;
+}
+
+body.modo-secreto .mini-player-btn:hover {
+    background: var(--secreto-verde);
+    color: var(--secreto-fondo);
+}
+
+/* ============================================
+   SECUENCIA DE INTRODUCCIÓN — estilo "Sistema" RPG (Genshin / Zelda / SVSSS)
+   ============================================ */
+
+body.intro-activa {
+    overflow: hidden;
+}
+
+.intro-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: radial-gradient(circle at 50% 40%, #101b2e 0%, #060a12 72%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.intro-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.intro-loading-text {
+    font-family: var(--sistema-fuente);
+    font-weight: 500;
+    font-size: 1.6rem;
+    letter-spacing: 3px;
+    color: var(--sistema-blanco);
+    text-shadow: 0 0 24px var(--sistema-glow);
+}
+
+.intro-dots span {
+    display: inline-block;
+    opacity: 0;
+    animation: intro-parpadeo 1.4s infinite;
+}
+
+.intro-dots span:nth-child(2) { animation-delay: 0.2s; }
+.intro-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes intro-parpadeo {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+
+.intro-dialogo {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 24px;
+}
+
+.intro-box {
+    width: 100%;
+    max-width: 640px;
+    background: var(--sistema-fondo-caja);
+    backdrop-filter: blur(26px) saturate(160%);
+    -webkit-backdrop-filter: blur(26px) saturate(160%);
+    border: 1px solid var(--sistema-borde);
+    border-radius: 20px;
+    padding: 30px 34px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5), 0 0 50px var(--sistema-glow);
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.intro-box.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.intro-texto {
+    position: relative;
+    font-family: var(--sistema-fuente);
+    font-size: 1.08rem;
+    line-height: 1.6;
+    color: var(--sistema-texto);
+    margin-bottom: 22px;
+    min-height: 1.6em;
+    white-space: pre-wrap;
+}
+
+.intro-controles {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.intro-controles.eleccion {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.intro-btn {
+    font-family: var(--sistema-fuente);
+    font-weight: 500;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    background: rgba(143, 196, 255, 0.08);
+    border: 1px solid var(--sistema-borde);
+    color: var(--sistema-cielo);
+    padding: 9px 24px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.intro-btn:hover {
+    background: var(--sistema-cobalto);
+    border-color: var(--sistema-cobalto);
+    color: var(--sistema-blanco);
+    box-shadow: 0 0 20px var(--sistema-glow);
+}
+
+/* Mensaje 13 — notificación tipo videojuego (acento dorado de "recompensa"
+   sobre la identidad azul del Sistema, como el HUD de un RPG) */
+.intro-texto.notificacion {
+    font-family: var(--sistema-fuente);
+    font-weight: 600;
+    font-size: 1.4rem;
+    letter-spacing: 0.5px;
+    color: #ffeb7a;
+    text-align: center;
+    text-shadow: 0 0 18px rgba(255, 217, 122, 0.55);
+    animation: intro-notif-pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes intro-notif-pop {
+    0% { transform: scale(0.4); opacity: 0; }
+    60% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Mensaje 15 — efecto glitch */
+.intro-texto.glitch {
+    color: #cad6e2;
+    animation: intro-glitch-shake 0.25s linear infinite;
+}
+
+.intro-texto.glitch::before,
+.intro-texto.glitch::after {
+    content: attr(data-texto);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: transparent;
+}
+
+.intro-texto.glitch::before {
+    color: #ff4d71;
+    clip-path: inset(0 0 55% 0);
+    transform: translate(-3px, -1px);
+}
+
+.intro-texto.glitch::after {
+    color: #2fffaf;
+    clip-path: inset(55% 0 0 0);
+    transform: translate(3px, 1px);
+}
+
+@keyframes intro-glitch-shake {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(-1px, 1px); }
+    40% { transform: translate(1px, -1px); }
+    60% { transform: translate(-1px, -1px); }
+    80% { transform: translate(1px, 1px); }
+}
+
+.intro-skip {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 510;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.75);
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    padding: 9px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.25s ease;
+}
+
+.intro-skip:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+
+/* Transición final tipo wipe-to-black clásica de videojuego */
+.intro-blackout {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 520;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.65s ease;
+}
+
+.intro-blackout.activo {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* ============================================
+   ESCRITORIO MIX-MEDIA — pantalla tras acertar la contraseña de un
+   capítulo secreto. Vista cenital de un escritorio desordenado: recortes,
+   notas, fotos y objetos esparcidos sobre fondo negro. Sigue la piel
+   "hacker" (terminal) pero deja que las imágenes hablen por sí solas.
+   Contenido en escritorio-secreto.js — ver GUIA-MARCADORES.md sección 2.2.
+   ============================================ */
+
+.desk-overlay {
+    background: #05070a;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    display: block;
+    overflow-y: auto;
+    padding: 0;
+    background-image: radial-gradient(circle at 50% 0%, #10201a 0%, #05070a 70%);
+}
+
+.desk-surface {
+    position: relative;
+    width: min(1100px, 94vw);
+    min-height: 640px;
+    margin: 56px auto 72px;
+}
+
+.desk-item {
+    position: absolute;
+    display: block;
+    max-width: 100%;
+    height: auto;
+    transform: rotate(var(--rot, 0deg));
+    filter: drop-shadow(3px 5px 6px rgba(0, 0, 0, 0.55));
+    transition: transform 0.25s ease, filter 0.25s ease;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+.desk-item.deco {
+    pointer-events: none;
+}
+
+.desk-item.interactivo {
+    cursor: pointer;
+}
+
+.desk-item.interactivo:hover,
+.desk-item.interactivo:focus-visible {
+    transform: rotate(var(--rot, 0deg)) scale(1.12) translateY(-4px);
+    filter: drop-shadow(5px 9px 10px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 14px rgba(124, 255, 178, 0.35));
+    z-index: 40 !important;
+    outline: none;
+}
+
+.desk-item.interactivo.audio-activo {
+    filter: drop-shadow(5px 9px 10px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 18px rgba(124, 255, 178, 0.8));
+}
+
+.desk-close-btn {
+    position: fixed;
+    top: 18px;
+    right: 22px;
+    z-index: 260;
+    color: var(--secreto-verde-claro);
+}
+
+.desk-close-btn:hover {
+    color: var(--secreto-verde);
+}
+
+/* Modo "enfoque": fundido a negro + acercamiento a un objeto del escritorio,
+   con su nota a la derecha — estilo inspección de inventario. Vive dentro de
+   #desk-overlay y cubre toda la pantalla mientras está activo. */
+.desk-focus-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 280;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+
+.desk-focus-overlay.activo {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.desk-focus-stage {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5%;
+    padding: 48px;
+}
+
+.desk-focus-image {
+    max-width: 46%;
+    max-height: 72vh;
+    object-fit: contain;
+    filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 30px rgba(124, 255, 178, 0.18));
+    transform: scale(0.82);
+    opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) 0.12s, opacity 0.4s ease 0.12s;
+}
+
+.desk-focus-overlay.activo .desk-focus-image {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.desk-focus-note {
+    max-width: 320px;
+    background: var(--secreto-fondo-caja);
+    border: 1px solid var(--secreto-borde);
+    border-radius: 2px;
+    box-shadow: 0 0 50px var(--secreto-glow);
+    padding: 18px 22px;
+    transform: translateX(18px);
+    opacity: 0;
+    transition: transform 0.4s ease 0.2s, opacity 0.4s ease 0.2s;
+}
+
+.desk-focus-overlay.activo .desk-focus-note {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.desk-focus-note-prompt {
+    font-family: var(--secreto-fuente);
+    font-size: 1.15rem;
+    letter-spacing: 1px;
+    color: var(--secreto-verde);
+    margin-bottom: 10px;
+}
+
+#desk-focus-text {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 1rem;
+    line-height: 1.55;
+    color: var(--secreto-texto);
+}
+
+.desk-focus-close {
+    position: fixed;
+    top: 18px;
+    right: 22px;
+    z-index: 281;
+    color: var(--secreto-verde-claro);
+}
+
+.desk-focus-close:hover {
+    color: var(--secreto-verde);
+}
+
+.desk-return-btn {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    z-index: 150;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 2px;
+    border: 1px solid var(--secreto-borde);
+    background: rgba(9, 20, 16, 0.6);
+    color: var(--secreto-verde-claro);
+    font-family: var(--secreto-fuente);
+    font-size: 1.05rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.desk-return-btn:hover {
+    background: var(--secreto-verde);
+    color: var(--secreto-fondo);
+}
+
+@media (max-width: 640px) {
+    .desk-surface {
+        min-height: 520px;
+        margin: 70px auto 48px;
+    }
+
+    .desk-focus-stage {
+        flex-direction: column;
+        justify-content: center;
+        gap: 20px;
+        padding: 64px 24px 32px;
+    }
+
+    .desk-focus-image {
+        max-width: 78%;
+        max-height: 42vh;
+    }
+
+    .desk-focus-note {
+        max-width: 88%;
+    }
+
+    .desk-return-btn {
+        font-size: 0.9rem;
+        padding: 6px 10px;
+    }
+}
+
+@media (max-width: 640px) {
+    .intro-box {
+        padding: 22px 22px;
+    }
+
+    .intro-texto {
+        font-size: 0.98rem;
+    }
+
+    .intro-loading-text {
+        font-size: 1.6rem;
+    }
+}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>传奇之歌 </title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Raleway:wght@300;400;500&family=VT323&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="bg-layer-a" class="bg-layer activa"></div>
+    <div id="bg-layer-b" class="bg-layer"></div>
+
+    <nav class="chapter-menu">
+        <button id="btn-chapter-menu" class="chapter-menu-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Ver capítulos">
+            <span id="chapter-menu-current">--</span>
+        </button>
+        <div id="chapter-menu-panel" class="chapter-menu-panel hidden"></div>
+    </nav>
+
+    <button id="btn-volver-escritorio" class="desk-return-btn hidden">🗂 Escritorio</button>
+
+    <button id="btn-comments-toggle" class="comments-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Ver comentarios guardados">
+        <span class="comments-toggle-icon" aria-hidden="true">✎</span>
+        <span id="comments-toggle-count" class="comments-toggle-count hidden">0</span>
+    </button>
+
+    <main class="reader-container">
+        <header class="novel-header">
+            <span class="chapter-number" id="chapter-num">--</span>
+            <h1 class="chapter-title" id="chapter-title">Cargando historia...</h1>
+        </header>
+
+        <div class="book-viewport" id="book-viewport">
+            <div class="book-flow" id="book-flow"></div>
+        </div>
+
+        <footer class="reader-footer">
+            <button id="btn-prev" class="nav-btn nav-btn-ghost">Atrás</button>
+            <span class="page-indicator" id="page-indicator"></span>
+            <button id="btn-next" class="nav-btn">Continuar</button>
+        </footer>
+    </main>
+
+    <!-- Puerta con acertijo + contraseña para acceder a un capítulo secreto -->
+    <div id="gate-overlay" class="overlay hidden">
+        <div class="scrapbook-card gate-card" id="gate-card">
+            <button id="close-gate" class="close-btn">&times;</button>
+            <p class="gate-riddle" id="gate-riddle"></p>
+            <form id="gate-form" class="gate-form">
+                <input type="text" id="gate-input" class="gate-input" placeholder="Escribe la contraseña..." autocomplete="off" autocapitalize="off" spellcheck="false" />
+                <button type="submit" class="nav-btn gate-submit">Ingresar</button>
+            </form>
+            <p class="gate-feedback hidden" id="gate-feedback"></p>
+        </div>
+    </div>
+
+    <div id="secret-overlay" class="overlay hidden">
+        <div class="scrapbook-card">
+            <button id="close-secret" class="close-btn">&times;</button>
+            <div id="secret-content">
+                </div>
+        </div>
+    </div>
+
+    <!-- Escritorio mix-media: aparece tras acertar la contraseña de un capítulo secreto.
+         Vista cenital de un escritorio desordenado con recortes/fotos/objetos —
+         ver escritorio-secreto.js y GUIA-MARCADORES.md sección 2.2. -->
+    <div id="desk-overlay" class="overlay desk-overlay hidden">
+        <button id="close-desk" class="close-btn desk-close-btn" aria-label="Cerrar el escritorio">&times;</button>
+        <div class="desk-surface" id="desk-surface"></div>
+
+        <!-- Modo "enfoque": fundido a negro + acercamiento a un objeto en particular,
+             con su nota a la derecha, estilo inspección de inventario. -->
+        <div id="desk-focus-overlay" class="desk-focus-overlay hidden">
+            <button id="close-desk-focus" class="close-btn desk-focus-close" aria-label="Volver al escritorio">&times;</button>
+            <div class="desk-focus-stage" id="desk-focus-stage">
+                <img id="desk-focus-image" class="desk-focus-image" src="" alt="" />
+                <div id="desk-focus-note" class="desk-focus-note">
+                    <p class="desk-focus-note-prompt">&gt; nota_adjunta.txt</p>
+                    <p id="desk-focus-text"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mini-player" class="mini-player hidden">
+        <span class="mini-player-icon" aria-hidden="true"></span>
+        <span class="mini-player-label" id="mini-player-label">—</span>
+        <button id="mini-player-toggle" class="mini-player-btn" aria-label="Pausar">❚❚</button>
+        <button id="mini-player-stop" class="mini-player-btn mini-player-stop" aria-label="Detener">✕</button>
+    </div>
+
+    <!-- Botón flotante que aparece junto a una selección de texto -->
+    <div id="highlight-toolbar" class="highlight-toolbar hidden">
+        <button id="btn-comentar-seleccion" class="highlight-toolbar-btn">✎ Comentar</button>
+    </div>
+
+    <!-- Mini formulario para escribir el comentario tras resaltar -->
+    <div id="comment-form-overlay" class="overlay hidden">
+        <div class="scrapbook-card comment-form-card">
+            <button id="close-comment-form" class="close-btn">&times;</button>
+            <p class="comment-form-excerpt" id="comment-form-excerpt"></p>
+            <textarea id="comment-form-textarea" class="comment-form-textarea" placeholder="Escribe tu comentario..." rows="4"></textarea>
+            <div class="comment-form-actions">
+                <button id="btn-descartar-comentario" class="nav-btn nav-btn-ghost">Descartar</button>
+                <button id="btn-guardar-comentario" class="nav-btn">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel con todos los comentarios guardados -->
+    <div id="comments-panel-overlay" class="overlay hidden">
+        <div class="comments-panel">
+            <div class="comments-panel-header">
+                <h2>Comentarios</h2>
+                <button id="close-comments-panel" class="close-btn">&times;</button>
+            </div>
+            <p class="comments-panel-hint">Guardados en este navegador. <span id="comments-storage-mode">Almacenamiento local</span>.</p>
+            <div id="comments-panel-list" class="comments-panel-list"></div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         SECUENCIA DE INTRODUCCIÓN — estilo "Sistema" RPG.
+         Se monta sobre toda la interfaz y se retira sola al terminar o al
+         omitirse; no depende de story.js/app.js ni ellos de esta.
+         ============================================ -->
+    <div id="intro-overlay" class="intro-overlay">
+        <div id="intro-loading" class="intro-loading">
+            <p class="intro-loading-text">Cargando<span class="intro-dots"><span>.</span><span>.</span><span>.</span></span></p>
+        </div>
+
+        <div id="intro-dialogo" class="intro-dialogo hidden">
+            <div class="intro-box" id="intro-box">
+                <p class="intro-texto" id="intro-texto"></p>
+                <div class="intro-controles" id="intro-controles"></div>
+            </div>
+        </div>
+
+        <button id="intro-skip" class="intro-skip">Omitir ▸▸</button>
+    </div>
+
+    <div id="intro-blackout" class="intro-blackout"></div>
+
+    <script src="story.js"></script>
+    <script src="escritorio-secreto.js"></script>
+    <script src="app.js"></script>
+    <script src="intro.js"></script>
+</body>
+</html>
