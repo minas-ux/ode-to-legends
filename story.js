@@ -2327,15 +2327,15 @@ const CONFIG_NOVELA = {
       "pistas": [
         {
           "archivo": "assets/audio/voicemail.mp3",
-          "titulo": "Un mensaje pendiente"
+          "titulo": "Tiene (1) mensaje nuevo."
         },
         {
-          "archivo": "assets/audio/apology.mp3",
+          "archivo": "assets/audio/rules.mp3",
           "titulo": "???"
         },
         {
           "archivo": "assets/audio/carrot.mp3",
-          "titulo": "Una interacción secreta"
+          "titulo": "Escuchando a escondidas."
         }
       ]
     }
