@@ -1,0 +1,8 @@
+# Herramientas locales (optimizar imágenes y audio): no se publican
+node_modules/
+herramientas/node_modules/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+desktop.ini
